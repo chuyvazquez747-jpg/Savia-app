@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#5d7a5e">
+    <title>Savia - Tu Árbol de Salud</title>
+
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Savia%22,%22short_name%22:%22Savia%22,%22start_url%22:%22index.html%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f9fbf9%22,%22theme_color%22:%22%235d7a5e%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/188/188333.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+
+    <style>
+        :root { --primary: #5d7a5e; --bg-glass: rgba(255, 255, 255, 0.85); --text: #2d3436; --bg-gradient: linear-gradient(-45deg, #e8f5e9, #f1f8e9, #dcedc8, #f9fbf9); }
+        body.dark-mode { --bg-glass: rgba(30, 39, 30, 0.9); --text: #f1f8e9; --bg-gradient: linear-gradient(-45deg, #1b211b, #2c362c, #1e241e, #141814); }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; background: var(--bg-gradient); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: var(--text); overflow: hidden; transition: background 0.5s ease; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .app-container { width: 100%; max-width: 420px; height: 100vh; position: relative; display: flex; flex-direction: column; }
+        .theme-toggle { position: absolute; top: 20px; right: 20px; width: 45px; height: 45px; background: var(--bg-glass); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-size: 1.2rem; }
+        .screen { display: none; flex: 1; padding: 1.5rem; overflow-y: auto; padding-bottom: 100px; text-align: center; box-sizing: border-box;}
+        .active-screen { display: flex; flex-direction: column; align-items: center; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: var(--bg-glass); backdrop-filter: blur(12px); border-radius: 25px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
+        .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 10px; }
+        .health-card { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 15px; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+        .organ-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .organ-label { font-size: 0.75rem; color: var(--text); opacity: 0.8; margin-bottom: 5px; font-weight: bold;}
+        .progress-ring { position: relative; width: 80px; height: 80px; }
+        .progress-ring__circle { transition: stroke-dashoffset 0.35s; transform: rotate(-90deg); transform-origin: 50% 50%; stroke: rgba(128,128,128,0.2); }
+        .progress-ring__bar { stroke: var(--primary); }
+        .percentage-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1rem; font-weight: bold; color: var(--primary); }
+        button { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; }
+        .btn-reset { background: none; color: #999; text-decoration: underline; font-size: 0.8rem; margin-top: 15px; border: none; cursor: pointer;}
+        .bottom-nav { position: absolute; bottom: 20px; left: 20px; right: 20px; height: 70px; background: var(--bg-glass); backdrop-filter: blur(10px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; }
+        .nav-item { cursor: pointer; text-align: center; color: #999; font-size: 0.7rem; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); font-weight: bold; transform: scale(1.1); }
+        .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+        .tree-evolution { font-size: 5rem; animation: sway 5s infinite ease-in-out; transform-origin: bottom center; margin-bottom: 10px;}
+        @keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(5deg); } }
+        input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.2); margin-bottom: 10px; box-sizing: border-box; background: rgba(255,255,255,0.1); color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="theme-toggle" id="themeToggle" style="display:none;" onclick="toggleTheme()">🌓</div>
+
+    <div id="screen-setup" class="screen active-screen">
+        <div class="tree-evolution">🌱</div>
+        <h2 style="color:var(--primary); font-weight:300; letter-spacing:2px;">BIENVENIDO</h2>
+        <div class="glass-card">
+            <input type="number" id="priceInput" placeholder="Precio cajetilla ($)">
+            <input type="number" id="packSizeInput" value="20">
+            <input type="number" id="dailyInput" placeholder="Cigarros al día">
+            <input type="text" id="goalNameInput" placeholder="Tu meta (Ej: Tenis)">
+            <input type="number" id="goalPriceInput" placeholder="Costo meta ($)">
+            <button onclick="initApp()">Comenzar Reto</button>
+        </div>
+    </div>
+
+    <div id="screen-stats" class="screen">
+        <div id="treeDisplay" class="tree-evolution">🌱</div>
+        <div class="glass-card">
+            <p style="margin:0; font-size:0.8rem; opacity: 0.7;">Tiempo de libertad</p>
+            <div id="timerDisplay" style="font-size:1.6rem; font-weight:bold; color:var(--primary);">0d 0h 0m 0s</div>
+        </div>
+        <div class="glass-card">
+            <p style="margin:0; font-size:0.8rem; opacity: 0.7;">Dinero recuperado</p>
+            <div style="font-size:2.8rem; font-weight:800; color:var(--primary);" id="moneyDisplay">$0.00</div>
+        </div>
+        <button class="btn-reset" onclick="resetApp()">Reiniciar todo</button>
+    </div>
+
+    <div id="screen-health" class="screen">
+        <h2 style="margin-bottom:15px; font-weight:400;">Tu Salud</h2>
+        <div class="health-grid">
+            <div class="health-card">
+                <div class="organ-icon">❤️</div>
+                <div class="organ-label">Presión</div>
+                <div class="progress-ring">
+                    <svg width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/><circle id="bar-bp" class="progress-ring__circle progress-ring__bar" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/></svg>
+                    <div class="percentage-text" id="val-bp">0%</div>
+                </div>
+            </div>
+            <div class="health-card">
+                <div class="organ-icon">🫁</div>
+                <div class="organ-label">Oxígeno</div>
+                <div class="progress-ring">
+                    <svg width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/><circle id="bar-ox" class="progress-ring__circle progress-ring__bar" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/></svg>
+                    <div class="percentage-text" id="val-ox">0%</div>
+                </div>
+            </div>
+            <div class="health-card">
+                <div class="organ-icon">👃</div>
+                <div class="organ-label">Sentidos</div>
+                <div class="progress-ring">
+                    <svg width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/><circle id="bar-taste" class="progress-ring__circle progress-ring__bar" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/></svg>
+                    <div class="percentage-text" id="val-taste">0%</div>
+                </div>
+            </div>
+            <div class="health-card">
+                <div class="organ-icon">🌬️</div>
+                <div class="organ-label">Pulmones</div>
+                <div class="progress-ring">
+                    <svg width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/><circle id="bar-lungs" class="progress-ring__circle progress-ring__bar" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/></svg>
+                    <div class="percentage-text" id="val-lungs">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-goals" class="screen">
+        <h2 style="font-weight:400;">Mi Objetivo</h2>
+        <div class="glass-card">
+            <h3 id="displayGoalName" style="color:var(--primary); margin:0 0 15px 0;">...</h3>
+            <div style="background:rgba(128,128,128,0.2); height:15px; border-radius:10px; overflow:hidden;"><div id="progressBar" style="background:var(--primary); height:100%; width:0%; transition:width 0.5s;"></div></div>
+            <p id="goalStatusText" style="font-weight:bold; margin-top:10px; font-size:1.2rem;">0%</p>
+            <p id="goalRemainingText" style="font-size: 0.8rem; opacity: 0.7;">Cargando...</p>
+        </div>
+    </div>
+
+    <nav class="bottom-nav" id="main-nav" style="display:none;">
+        <div class="nav-item active" onclick="switchScreen('screen-stats', this)"><span class="nav-icon">🌳</span>Progreso</div>
+        <div class="nav-item" onclick="switchScreen('screen-health', this)"><span class="nav-icon">❤️</span>Salud</div>
+        <div class="nav-item" onclick="switchScreen('screen-goals', this)"><span class="nav-icon">🎯</span>Meta</div>
+    </nav>
+</div>
+
+<script>
+    const CIRCUMFERENCE = 213.6;
+    let data = { startTime: null, pricePerCig: 0, dailyCigs: 0, goalName: "", goalPrice: 0, isDarkMode: false };
+
+    window.onload = () => {
+        const saved = localStorage.getItem('savia_data');
+        if(saved) {
+            data = JSON.parse(saved);
+            if(data.isDarkMode) document.body.classList.add('dark-mode');
+            startEngine();
+        }
+    };
+
+    function playStartSound() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle'; 
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function toggleTheme() {
+        data.isDarkMode = !data.isDarkMode;
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('savia_data', JSON.stringify(data));
+        document.getElementById('themeToggle').innerText = data.isDarkMode ? "☀️" : "🌓";
+    }
+
+    function initApp() {
+        const p = parseFloat(document.getElementById('priceInput').value);
+        const pk = parseInt(document.getElementById('packSizeInput').value);
+        const d = parseInt(document.getElementById('dailyInput').value);
+        if(!p || !d) return alert("Llena los datos");
+
+        playStartSound(); 
+
+        data = {
+            startTime: new Date().getTime(),
+            pricePerCig: p / pk,
+            dailyCigs: d,
+            goalName: document.getElementById('goalNameInput').value || "Ahorro",
+            goalPrice: parseFloat(document.getElementById('goalPriceInput').value) || 0,
+            isDarkMode: data.isDarkMode
+        };
+        localStorage.setItem('savia_data', JSON.stringify(data));
+        startEngine();
+    }
+
+    function startEngine() {
+        document.getElementById('screen-setup').classList.remove('active-screen');
+        document.getElementById('screen-stats').classList.add('active-screen');
+        document.getElementById('main-nav').style.display = 'flex';
+        document.getElementById('themeToggle').style.display = 'flex';
+        document.getElementById('displayGoalName').innerText = data.goalName;
+        updateLogic();
+        setInterval(updateLogic, 1000);
+    }
+
+    function updateLogic() {
+        const diff = new Date().getTime() - data.startTime;
+        const totalSec = diff / 1000;
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timerDisplay').innerText = `${d}d ${h}h ${m}m ${s}s`;
+        const saved = ((data.dailyCigs / 86400) * totalSec) * data.pricePerCig;
+        document.getElementById('moneyDisplay').innerText = `$${saved.toFixed(2)}`;
+
+        const healthMetrics = [{ id: 'bp', target: 1200 }, { id: 'ox', target: 28800 }, { id: 'taste', target: 172800 }, { id: 'lungs', target: 259200 }];
+        healthMetrics.forEach(metric => {
+            const perc = Math.min((totalSec / metric.target) * 100, 100);
+            document.getElementById(`val-${metric.id}`).innerText = `${Math.floor(perc)}%`;
+            document.getElementById(`bar-${metric.id}`).style.strokeDashoffset = CIRCUMFERENCE - (perc / 100) * CIRCUMFERENCE;
+        });
+
+        if(data.goalPrice > 0) {
+            const perc = Math.min((saved / data.goalPrice) * 100, 100);
+            document.getElementById('progressBar').style.width = perc + "%";
+            document.getElementById('goalStatusText').innerText = perc.toFixed(2) + "%";
+            document.getElementById('goalRemainingText').innerText = `Faltan $${Math.max(data.goalPrice - saved, 0).toFixed(2)}`;
+        }
+    }
+
+    function switchScreen(id, el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active-screen');
+        el.classList.add('active');
+    }
+
+    function resetApp() {
+        if(confirm("¿Seguro que quieres reiniciar?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>
